@@ -1,16 +1,18 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Calendar, Download } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Calendar, Download, Upload } from 'lucide-react';
 
 type PeriodType = 'week' | 'month' | 'quarter' | 'year' | 'all';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [period, setPeriod] = useState<PeriodType>('month');
   const [customStart, setCustomStart] = useState<string>('');
   const [customEnd, setCustomEnd] = useState<string>('');
@@ -77,9 +79,19 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            onClick={() => setLocation('/import')}
+            size="lg"
+            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Importar XLSX
+          </Button>
+        </div>
         <div>
           <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
-          <p className="text-muted-foreground">Bem-vindo, {user?.name || 'Usuário'}!</p>
+          <p className="text-slate-400">Bem-vindo, {user?.name || 'Usuário'}!</p>
         </div>
 
         {/* Period Selector */}
@@ -107,7 +119,7 @@ export default function Dashboard() {
         {/* Total Income */}
         <Card className="metric-card metric-positive">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Receitas</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Receitas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="metric-value text-green-400">
@@ -123,7 +135,7 @@ export default function Dashboard() {
         {/* Total Expense */}
         <Card className="metric-card metric-negative">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Despesas</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Despesas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="metric-value text-red-400">
@@ -139,7 +151,7 @@ export default function Dashboard() {
         {/* Net Balance */}
         <Card className={`metric-card ${(metrics?.netBalance || 0) >= 0 ? 'metric-positive' : 'metric-negative'}`}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Líquido</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Saldo Líquido</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`metric-value ${(metrics?.netBalance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -161,13 +173,13 @@ export default function Dashboard() {
         {/* Average Monthly */}
         <Card className="metric-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Média Mensal</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Média Mensal</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="metric-value text-blue-400">
               R$ {metrics?.averageMonthlyIncome.toFixed(2) || '0.00'}
             </div>
-            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
               <Calendar className="h-3 w-3" />
               <span>Receita média</span>
             </div>
@@ -204,7 +216,7 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
                 Nenhum dado disponível
               </div>
             )}
@@ -245,7 +257,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
                 Nenhum dado disponível
               </div>
             )}
@@ -279,7 +291,7 @@ export default function Dashboard() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+              <div className="h-[300px] flex items-center justify-center text-slate-400">
                 Nenhum dado disponível
               </div>
             )}
@@ -300,7 +312,7 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{anomaly.category}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-400">
                           {new Date(anomaly.date).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
@@ -316,7 +328,7 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-slate-400">
                   Nenhuma anomalia detectada
                 </div>
               )}

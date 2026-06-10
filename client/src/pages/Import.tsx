@@ -87,7 +87,7 @@ export default function Import() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Importar Dados Financeiros</h1>
-        <p className="text-muted-foreground">
+        <p className="text-slate-400">
           Faça upload do seu arquivo XLSX para importar transações
         </p>
       </div>
@@ -126,17 +126,17 @@ export default function Import() {
                   <FileUp className="h-12 w-12 text-green-500" />
                   <div>
                     <p className="font-semibold">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-400">
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
                   </div>
                 </>
               ) : (
                 <>
-                  <Upload className="h-12 w-12 text-muted-foreground" />
+                  <Upload className="h-12 w-12 text-slate-400" />
                   <div>
                     <p className="font-semibold">Arraste seu arquivo aqui</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-400">
                       ou clique para selecionar
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export default function Import() {
                       )}
                       <div>
                         <p className="font-medium">{imp.fileName}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-400">
                           {new Date(imp.importedAt).toLocaleString('pt-BR')}
                         </p>
                       </div>
@@ -227,7 +227,7 @@ export default function Import() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-slate-400">
               Nenhuma importação realizada ainda
             </div>
           )}
