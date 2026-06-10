@@ -14,35 +14,86 @@ export interface XLSXProcessResult {
 }
 
 /**
- * Parse date from DD-MM-YY format (e.g., "06-10-26" = June 10, 2026)
+ * Parse date from various formats (ISO, DD-MM-YY, DD/MM/YYYY, etc.)
  */
-function parseDate(dateStr: string): Date {
-  if (!dateStr || typeof dateStr !== 'string') {
+function parseDate(dateStr: any): Date {
+  if (!dateStr) {
     throw new Error(`Invalid date string: ${dateStr}`);
   }
 
-  const parts = dateStr.trim().split('-');
-  if (parts.length !== 3) {
-    throw new Error(`Invalid date format: ${dateStr}. Expected DD-MM-YY`);
+  // Handle numeric dates (Excel serial numbers)
+  if (typeof dateStr === 'number') {
+    // Excel date serial number (days since 1900-01-01)
+    const excelEpoch = new Date(1900, 0, 1);
+    const date = new Date(excelEpoch.getTime() + (dateStr - 1) * 86400000);
+    return date;
   }
 
-  const [dayStr, monthStr, yearStr] = parts;
-  const day = parseInt(dayStr, 10);
-  const month = parseInt(monthStr, 10);
-  let year = parseInt(yearStr, 10);
+  const str = String(dateStr).trim();
 
-  // Convert 2-digit year to 4-digit (00-99 -> 2000-2099)
-  if (year < 100) {
-    year += 2000;
+  // Handle ISO format with time (2026-06-10 00:00:00 or 2026-06-10T00:00:00)
+  if (str.includes('T') || (str.includes('-') && str.includes(':'))) {
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
   }
 
-  if (isNaN(day) || isNaN(month) || isNaN(year)) {
-    throw new Error(`Invalid date components: ${dateStr}`);
+  // Handle DD-MM-YY format
+  const dashParts = str.split('-');
+  if (dashParts.length === 3 && dashParts[0].length === 2) {
+    try {
+      const day = parseInt(dashParts[0], 10);
+      const month = parseInt(dashParts[1], 10);
+      let year = parseInt(dashParts[2], 10);
+
+      // Convert 2-digit year to 4-digit (00-99 -> 2000-2099)
+      if (year < 100) {
+        year += 2000;
+      }
+
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    } catch (e) {
+      // Continue to next format
+    }
   }
 
-  // Create date in UTC to avoid timezone issues
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return date;
+  // Handle DD/MM/YYYY format
+  const slashParts = str.split('/');
+  if (slashParts.length === 3) {
+    try {
+      const day = parseInt(slashParts[0], 10);
+      const month = parseInt(slashParts[1], 10);
+      let year = parseInt(slashParts[2], 10);
+
+      // Convert 2-digit year to 4-digit
+      if (year < 100) {
+        year += 2000;
+      }
+
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        const date = new Date(Date.UTC(year, month - 1, day));
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    } catch (e) {
+      // Continue to next format
+    }
+  }
+
+  // Try parsing as ISO string
+  const parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  throw new Error(`Could not parse date: ${dateStr}`);
 }
 
 /**
@@ -50,21 +101,24 @@ function parseDate(dateStr: string): Date {
  */
 function parseAmount(amountStr: any): number {
   if (typeof amountStr === 'number') {
-    return amountStr;
+    return Math.abs(amountStr);
   }
 
-  if (!amountStr || typeof amountStr !== 'string') {
+  if (!amountStr) {
     return 0;
   }
 
+  const str = String(amountStr).trim();
+  if (!str) return 0;
+
   // Remove common currency symbols and whitespace
-  let cleaned = amountStr
+  let cleaned = str
     .replace(/[R$\s]/g, '')
-    .replace(/\./g, '') // Remove thousand separators
-    .replace(',', '.'); // Replace comma with dot
+    .replace(/\./g, '') // Remove thousand separators (assuming . is thousands)
+    .replace(',', '.'); // Replace comma with dot for decimal
 
   const amount = parseFloat(cleaned);
-  return isNaN(amount) ? 0 : amount;
+  return isNaN(amount) ? 0 : Math.abs(amount);
 }
 
 /**

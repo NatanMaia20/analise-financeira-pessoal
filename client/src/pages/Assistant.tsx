@@ -97,7 +97,7 @@ export default function Assistant() {
         {/* Chat Area */}
         <div className="lg:col-span-2">
           <Card className="chart-container h-[600px] flex flex-col">
-            <CardHeader className="border-b border-border">
+            <CardHeader className="border-b border-slate-700">
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5" />
                 Chat
@@ -149,7 +149,7 @@ export default function Assistant() {
             </CardContent>
 
             {/* Input */}
-            <div className="border-t border-border p-4">
+            <div className="border-t border-slate-700 p-4">
               <div className="flex gap-2">
                 <Input
                   placeholder="Digite sua pergunta..."

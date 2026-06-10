@@ -109,7 +109,7 @@ export default function Import() {
             className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
               dragActive
                 ? 'border-green-500 bg-green-500/10'
-                : 'border-border hover:border-muted-foreground'
+                : 'border-slate-700 hover:border-muted-foreground'
             }`}
           >
             <input
