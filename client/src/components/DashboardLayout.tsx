@@ -27,9 +27,12 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
+import { FileUp, MessageSquare } from 'lucide-react';
+
 const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: FileUp, label: "Importar", path: "/import" },
+  { icon: MessageSquare, label: "Assistente", path: "/assistant" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

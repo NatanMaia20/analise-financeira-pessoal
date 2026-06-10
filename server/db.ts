@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte, between, desc, asc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, transactions, categories, imports, financialGoals, insights, monthlySummary } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,224 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============ TRANSACTION QUERIES ============
+
+export async function insertTransactions(txns: typeof transactions.$inferInsert[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (txns.length === 0) return [];
+  return await db.insert(transactions).values(txns);
+}
+
+export async function getTransactionsByDateRange(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(transactions)
+    .where(between(transactions.date, startDate, endDate))
+    .orderBy(desc(transactions.date));
+}
+
+export async function getTransactionsByCategory(category: string, startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const conditions = [eq(transactions.category, category)];
+  if (startDate && endDate) {
+    conditions.push(between(transactions.date, startDate, endDate));
+  }
+  
+  return await db
+    .select()
+    .from(transactions)
+    .where(and(...conditions))
+    .orderBy(desc(transactions.date));
+}
+
+export async function getTransactionsByType(type: 'expense' | 'income' | 'transfer', startDate?: Date, endDate?: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const conditions = [eq(transactions.type, type)];
+  if (startDate && endDate) {
+    conditions.push(between(transactions.date, startDate, endDate));
+  }
+  
+  return await db
+    .select()
+    .from(transactions)
+    .where(and(...conditions))
+    .orderBy(desc(transactions.date));
+}
+
+export async function getAllTransactions() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(transactions).orderBy(desc(transactions.date));
+}
+
+export async function getTransactionCount() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select({ count: transactions.id }).from(transactions);
+  return result[0]?.count || 0;
+}
+
+// ============ CATEGORY QUERIES ============
+
+export async function insertCategories(cats: typeof categories.$inferInsert[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  if (cats.length === 0) return [];
+  return await db.insert(categories).values(cats);
+}
+
+export async function getCategoriesByType(type: 'expense' | 'income') {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(categories)
+    .where(eq(categories.type, type))
+    .orderBy(asc(categories.name));
+}
+
+export async function getAllCategories() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(categories).orderBy(asc(categories.name));
+}
+
+// ============ IMPORT QUERIES ============
+
+export async function createImport(data: typeof imports.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(imports).values(data);
+  return result;
+}
+
+export async function getImportHistory() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.select().from(imports).orderBy(desc(imports.importedAt));
+}
+
+export async function getLatestImport() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.select().from(imports).orderBy(desc(imports.importedAt)).limit(1);
+  return result[0] || null;
+}
+
+// ============ FINANCIAL GOALS QUERIES ============
+
+export async function createFinancialGoal(goal: typeof financialGoals.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(financialGoals).values(goal);
+}
+
+export async function getActiveGoals() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(financialGoals)
+    .where(eq(financialGoals.isActive, 1))
+    .orderBy(asc(financialGoals.name));
+}
+
+// ============ INSIGHTS QUERIES ============
+
+export async function createInsight(insight: typeof insights.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db.insert(insights).values(insight);
+}
+
+export async function getInsightsByPeriod(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(insights)
+    .where(and(
+      gte(insights.periodStart, startDate),
+      lte(insights.periodEnd, endDate)
+    ))
+    .orderBy(desc(insights.createdAt));
+}
+
+export async function getRecentInsights(limit: number = 5) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(insights)
+    .orderBy(desc(insights.createdAt))
+    .limit(limit);
+}
+
+// ============ MONTHLY SUMMARY QUERIES ============
+
+export async function getMonthlySummary(year: number, month: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db
+    .select()
+    .from(monthlySummary)
+    .where(and(
+      eq(monthlySummary.year, year),
+      eq(monthlySummary.month, month)
+    ))
+    .limit(1);
+  
+  return result[0] || null;
+}
+
+export async function upsertMonthlySummary(data: typeof monthlySummary.$inferInsert) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getMonthlySummary(data.year, data.month!);
+  
+  if (existing) {
+    return await db
+      .update(monthlySummary)
+      .set(data)
+      .where(and(
+        eq(monthlySummary.year, data.year),
+        eq(monthlySummary.month, data.month!)
+      ));
+  } else {
+    return await db.insert(monthlySummary).values(data);
+  }
+}
+
+export async function getMonthlySummaryRange(startYear: number, startMonth: string, endYear: number, endMonth: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  return await db
+    .select()
+    .from(monthlySummary)
+    .orderBy(asc(monthlySummary.year), asc(monthlySummary.month));
+}
