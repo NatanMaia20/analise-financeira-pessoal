@@ -76,126 +76,124 @@ export default function Dashboard() {
   const isLoading = metricsQuery.isLoading || categoryQuery.isLoading;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="animate-slideInFromTop">
+        <div className="mb-6">
+          <h1 className="text-4xl mb-2">Dashboard Financeiro</h1>
+          <p className="text-slate-400 text-lg">Bem-vindo, {user?.name || 'Usuário'}! Aqui está seu resumo financeiro.</p>
+        </div>
+        
+        {/* Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <Button
             onClick={() => setLocation('/import')}
-            size="lg"
-            className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+            className="btn-primary"
           >
             <Upload className="h-4 w-4" />
             Importar XLSX
           </Button>
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard Financeiro</h1>
-          <p className="text-slate-400">Bem-vindo, {user?.name || 'Usuário'}!</p>
-        </div>
 
-        {/* Period Selector */}
-        <div className="flex gap-2">
-          <Select value={period} onValueChange={(value) => setPeriod(value as PeriodType)}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Selecione período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">Última semana</SelectItem>
-              <SelectItem value="month">Último mês</SelectItem>
-              <SelectItem value="quarter">Último trimestre</SelectItem>
-              <SelectItem value="year">Último ano</SelectItem>
-              <SelectItem value="all">Todo período</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-3 items-center">
+            <Select value={period} onValueChange={(value) => setPeriod(value as PeriodType)}>
+              <SelectTrigger className="w-48 select-base">
+                <SelectValue placeholder="Selecione período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Última semana</SelectItem>
+                <SelectItem value="month">Último mês</SelectItem>
+                <SelectItem value="quarter">Último trimestre</SelectItem>
+                <SelectItem value="year">Último ano</SelectItem>
+                <SelectItem value="all">Todo período</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon" className="btn-secondary">
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Income */}
-        <Card className="metric-card metric-positive">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Receitas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="metric-value text-green-400">
-              R$ {metrics?.totalIncome.toFixed(2) || '0.00'}
+        <div className="metric-card metric-positive animate-slideInFromLeft">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="metric-label">Receitas</p>
+              <div className="metric-value text-green-400">
+                R$ {metrics?.totalIncome.toFixed(2) || '0.00'}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 text-xs text-green-400">
-              <ArrowUpRight className="h-3 w-3" />
-              <span>+{metrics?.savingsRate.toFixed(1) || '0'}% de economia</span>
-            </div>
-          </CardContent>
-        </Card>
+            <ArrowUpRight className="h-5 w-5 text-green-400" />
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-xs text-green-400">
+            <span className="font-semibold">+{metrics?.savingsRate.toFixed(1) || '0'}%</span>
+            <span className="text-slate-400">economia</span>
+          </div>
+        </div>
 
         {/* Total Expense */}
-        <Card className="metric-card metric-negative">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Despesas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="metric-value text-red-400">
-              R$ {metrics?.totalExpense.toFixed(2) || '0.00'}
+        <div className="metric-card metric-negative animate-slideInFromLeft" style={{animationDelay: '0.1s'}}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="metric-label">Despesas</p>
+              <div className="metric-value text-red-400">
+                R$ {metrics?.totalExpense.toFixed(2) || '0.00'}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 text-xs text-red-400">
-              <ArrowDownLeft className="h-3 w-3" />
-              <span>{((metrics?.totalExpense || 0) / (metrics?.totalIncome || 1) * 100).toFixed(1)}% da renda</span>
-            </div>
-          </CardContent>
-        </Card>
+            <ArrowDownLeft className="h-5 w-5 text-red-400" />
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-xs text-red-400">
+            <span className="font-semibold">{((metrics?.totalExpense || 0) / (metrics?.totalIncome || 1) * 100).toFixed(1)}%</span>
+            <span className="text-slate-400">da renda</span>
+          </div>
+        </div>
 
         {/* Net Balance */}
-        <Card className={`metric-card ${(metrics?.netBalance || 0) >= 0 ? 'metric-positive' : 'metric-negative'}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Saldo Líquido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`metric-value ${(metrics?.netBalance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              R$ {metrics?.netBalance.toFixed(2) || '0.00'}
+        <div className={`metric-card ${(metrics?.netBalance || 0) >= 0 ? 'metric-positive' : 'metric-negative'} animate-slideInFromLeft`} style={{animationDelay: '0.2s'}}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="metric-label">Saldo Líquido</p>
+              <div className={`metric-value ${(metrics?.netBalance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                R$ {metrics?.netBalance.toFixed(2) || '0.00'}
+              </div>
             </div>
-            <div className={`flex items-center gap-2 mt-2 text-xs ${(metrics?.netBalance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {(metrics?.netBalance || 0) >= 0 ? (
-                <TrendingUp className="h-3 w-3" />
-              ) : (
-                <TrendingDown className="h-3 w-3" />
-              )}
-              <span>
-                {(metrics?.netBalance || 0) >= 0 ? 'Superávit' : 'Déficit'}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+            {(metrics?.netBalance || 0) >= 0 ? (
+              <TrendingUp className="h-5 w-5 text-green-400" />
+            ) : (
+              <TrendingDown className="h-5 w-5 text-red-400" />
+            )}
+          </div>
+          <div className={`flex items-center gap-2 mt-4 text-xs ${(metrics?.netBalance || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <span className="font-semibold">{(metrics?.netBalance || 0) >= 0 ? 'Superávit' : 'Déficit'}</span>
+          </div>
+        </div>
 
         {/* Average Monthly */}
-        <Card className="metric-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Média Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="metric-value text-blue-400">
-              R$ {metrics?.averageMonthlyIncome.toFixed(2) || '0.00'}
+        <div className="metric-card animate-slideInFromLeft" style={{animationDelay: '0.3s'}}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="metric-label">Média Mensal</p>
+              <div className="metric-value text-blue-400">
+                R$ {metrics?.averageMonthlyIncome.toFixed(2) || '0.00'}
+              </div>
             </div>
-            <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
-              <Calendar className="h-3 w-3" />
-              <span>Receita média</span>
-            </div>
-          </CardContent>
-        </Card>
+            <Calendar className="h-5 w-5 text-blue-400" />
+          </div>
+          <div className="flex items-center gap-2 mt-4 text-xs text-slate-400">
+            <span className="font-semibold">Receita média</span>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Monthly Trend */}
-        <Card className="chart-container">
-          <CardHeader>
-            <CardTitle>Evolução Mensal</CardTitle>
-            <CardDescription>Receitas vs Despesas</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="chart-container animate-slideInFromLeft">
+          <h3 className="chart-title">Evolução Mensal</h3>
+          <p className="text-slate-400 text-sm mb-4">Receitas vs Despesas</p>
+          <div>
             {monthlyChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyChartData}>
@@ -220,16 +218,14 @@ export default function Dashboard() {
                 Nenhum dado disponível
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Category Distribution */}
-        <Card className="chart-container">
-          <CardHeader>
-            <CardTitle>Distribuição por Categoria</CardTitle>
-            <CardDescription>Top 6 categorias de despesa</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="chart-container animate-slideInFromRight">
+          <h3 className="chart-title">Distribuição por Categoria</h3>
+          <p className="text-slate-400 text-sm mb-4">Top 6 categorias de despesa</p>
+          <div>
             {categoryChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -261,19 +257,17 @@ export default function Dashboard() {
                 Nenhum dado disponível
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Top Categories */}
-        <Card className="chart-container">
-          <CardHeader>
-            <CardTitle>Top Categorias</CardTitle>
-            <CardDescription>Maiores gastos por categoria</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="chart-container animate-slideInFromLeft">
+          <h3 className="chart-title">Top Categorias</h3>
+          <p className="text-slate-400 text-sm mb-4">Maiores gastos por categoria</p>
+          <div>
             {categoryAnalysis.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categoryAnalysis.slice(0, 6)}>
@@ -295,16 +289,14 @@ export default function Dashboard() {
                 Nenhum dado disponível
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Spending Anomalies */}
-        <Card className="chart-container">
-          <CardHeader>
-            <CardTitle>Gastos Anômalos</CardTitle>
-            <CardDescription>Transações fora do padrão</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div className="chart-container animate-slideInFromRight">
+          <h3 className="chart-title">Gastos Anômalos</h3>
+          <p className="text-slate-400 text-sm mb-4">Transações fora do padrão</p>
+          <div>
             <div className="space-y-3">
               {anomalies.length > 0 ? (
                 anomalies.slice(0, 5).map((anomaly, idx) => (
@@ -333,8 +325,8 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
