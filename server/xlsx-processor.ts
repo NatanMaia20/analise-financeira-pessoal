@@ -142,8 +142,8 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
       const worksheet = workbook.Sheets['Despesas'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // Skip header row (row 0)
-      for (let i = 1; i < data.length; i++) {
+      // Skip title row (row 0) and header row (row 1), start from row 2
+      for (let i = 2; i < data.length; i++) {
         const row = data[i] as any[];
         if (!row[0]) continue; // Skip empty rows
 
@@ -194,8 +194,8 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
       const worksheet = workbook.Sheets['Receita'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // Skip header row (row 0)
-      for (let i = 1; i < data.length; i++) {
+      // Skip title row (row 0) and header row (row 1), start from row 2
+      for (let i = 2; i < data.length; i++) {
         const row = data[i] as any[];
         if (!row[0]) continue; // Skip empty rows
 
@@ -246,8 +246,8 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
       const worksheet = workbook.Sheets['Transferências'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-      // Skip header row (row 0)
-      for (let i = 1; i < data.length; i++) {
+      // Skip title row (row 0) and header row (row 1), start from row 2
+      for (let i = 2; i < data.length; i++) {
         const row = data[i] as any[];
         if (!row[0]) continue; // Skip empty rows
 
