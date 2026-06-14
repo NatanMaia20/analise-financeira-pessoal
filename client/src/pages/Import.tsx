@@ -70,11 +70,18 @@ export default function Import() {
         if (fileInputRef.current) fileInputRef.current.value = '';
         importHistoryQuery.refetch();
       } else {
-        toast.error(`Erro na importação: ${result.error || result.errors?.join(', ')}`);
+        const errorMessage = result.error || (result.errors && result.errors.length > 0 ? result.errors[0] : 'Erro desconhecido');
+        console.error('[Import] Error details:', result);
+        toast.error(`Erro na importação: ${errorMessage}`);
+        
+        if (result.errors && result.errors.length > 0) {
+          console.error('[Import] All errors:', result.errors);
+        }
       }
     } catch (error) {
-      toast.error('Erro ao processar arquivo');
-      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[Import] Exception:', error);
+      toast.error(`Erro ao processar arquivo: ${errorMsg}`);
     }
   };
 

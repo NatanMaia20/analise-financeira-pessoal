@@ -136,11 +136,13 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
   try {
     // Read workbook
     const workbook = XLSX.read(buffer, { type: 'buffer' });
+    console.log('[XLSX] Sheets found:', workbook.SheetNames);
 
     // Process Despesas (Expenses)
     if (workbook.SheetNames.includes('Despesas')) {
       const worksheet = workbook.Sheets['Despesas'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('[XLSX] Despesas sheet rows:', data.length);
 
       // Skip title row (row 0) and header row (row 1), start from row 2
       for (let i = 2; i < data.length; i++) {
@@ -158,7 +160,7 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
           const description = String(row[8] || '').trim();
 
           if (!category || amount <= 0) {
-            errors.push(`Row ${i + 1}: Missing category or invalid amount`);
+            errors.push(`Despesas Row ${i + 1}: Missing category or invalid amount (amount=${amount}, category=${category})`);
             continue;
           }
 
@@ -184,15 +186,19 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
             description: description || null,
           });
         } catch (err) {
-          errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error(`[XLSX] Despesas Row ${i + 1} error:`, errorMsg, 'Row data:', row);
+          errors.push(`Despesas Row ${i + 1}: ${errorMsg}`);
         }
       }
+      console.log(`[XLSX] Despesas processed: ${transactions.length} transactions, ${errors.length} errors`);
     }
 
     // Process Receita (Income)
     if (workbook.SheetNames.includes('Receita')) {
       const worksheet = workbook.Sheets['Receita'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('[XLSX] Receita sheet rows:', data.length);
 
       // Skip title row (row 0) and header row (row 1), start from row 2
       for (let i = 2; i < data.length; i++) {
@@ -210,7 +216,7 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
           const description = String(row[8] || '').trim();
 
           if (!category || amount <= 0) {
-            errors.push(`Row ${i + 1}: Missing category or invalid amount`);
+            errors.push(`Receita Row ${i + 1}: Missing category or invalid amount (amount=${amount}, category=${category})`);
             continue;
           }
 
@@ -236,15 +242,19 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
             description: description || null,
           });
         } catch (err) {
-          errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error(`[XLSX] Receita Row ${i + 1} error:`, errorMsg, 'Row data:', row);
+          errors.push(`Receita Row ${i + 1}: ${errorMsg}`);
         }
       }
+      console.log(`[XLSX] Receita processed: ${transactions.length} transactions, ${errors.length} errors`);
     }
 
     // Process Transferências (Transfers)
     if (workbook.SheetNames.includes('Transferências')) {
       const worksheet = workbook.Sheets['Transferências'];
       const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      console.log('[XLSX] Transferências sheet rows:', data.length);
 
       // Skip title row (row 0) and header row (row 1), start from row 2
       for (let i = 2; i < data.length; i++) {
@@ -261,7 +271,7 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
           const description = String(row[7] || '').trim();
 
           if (!sourceAccount || !targetAccount || amount <= 0) {
-            errors.push(`Row ${i + 1}: Missing transfer details or invalid amount`);
+            errors.push(`Transferências Row ${i + 1}: Missing transfer details or invalid amount (source=${sourceAccount}, target=${targetAccount}, amount=${amount})`);
             continue;
           }
 
@@ -287,15 +297,22 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
             description: description || null,
           });
         } catch (err) {
-          errors.push(`Row ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          console.error(`[XLSX] Transferências Row ${i + 1} error:`, errorMsg, 'Row data:', row);
+          errors.push(`Transferências Row ${i + 1}: ${errorMsg}`);
         }
       }
+      console.log(`[XLSX] Transferências processed: ${transactions.length} transactions, ${errors.length} errors`);
     }
   } catch (err) {
-    errors.push(`File processing error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error('[XLSX] File processing error:', errorMsg, err);
+    errors.push(`File processing error: ${errorMsg}`);
   }
 
-  return {
+  console.log('[XLSX] Final result:', { transactionCount: transactions.length, errorCount: errors.length, errors });
+
+  const result = {
     transactions,
     categories,
     errors,
@@ -306,6 +323,8 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
       dateRange,
     },
   };
+
+  return result;
 }
 
 /**

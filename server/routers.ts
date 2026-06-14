@@ -101,9 +101,12 @@ export const appRouter = router({
             summary: result.summary,
           };
         } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          console.error('[Import] Upload error:', errorMsg, error);
           return {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: errorMsg,
+            details: error instanceof Error ? error.stack : undefined,
           };
         }
       }),
