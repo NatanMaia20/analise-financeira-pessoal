@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Spinner } from '@/components/ui/spinner';
@@ -10,7 +9,6 @@ import { toast } from 'sonner';
 export default function Import() {
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = trpc.import.uploadFile.useMutation();
   const importHistoryQuery = trpc.import.history.useQuery();
@@ -69,7 +67,6 @@ export default function Import() {
       if (result.success) {
         toast.success(`Importação concluída! ${result.totalRecords} transações adicionadas.`);
         setFile(null);
-        setPreview(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         importHistoryQuery.refetch();
       } else {
@@ -93,146 +90,136 @@ export default function Import() {
       </div>
 
       {/* Upload Area */}
-      <Card className="chart-container">
-        <CardHeader>
-          <CardTitle>Upload de Arquivo</CardTitle>
-          <CardDescription>
-            Selecione o arquivo GastosFinanceiros.xlsx do seu aplicativo financeiro
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              dragActive
-                ? 'border-green-500 bg-green-500/10'
-                : 'border-slate-700 hover:border-muted-foreground'
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx"
-              onChange={handleChange}
-              className="hidden"
-            />
+      <div className="chart-container">
+        <h3 className="chart-title">Upload de Arquivo</h3>
+        <p className="text-slate-400 text-sm mb-6">Selecione o arquivo GastosFinanceiros.xlsx do seu aplicativo financeiro</p>
+        
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+            dragActive
+              ? 'border-green-500 bg-green-500/10'
+              : 'border-slate-700 hover:border-slate-600'
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx"
+            onChange={handleChange}
+            className="hidden"
+          />
 
-            <div className="flex flex-col items-center gap-4">
-              {file ? (
-                <>
-                  <FileUp className="h-12 w-12 text-green-500" />
-                  <div>
-                    <p className="font-semibold">{file.name}</p>
-                    <p className="text-sm text-slate-400">
-                      {(file.size / 1024).toFixed(2)} KB
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Upload className="h-12 w-12 text-slate-400" />
-                  <div>
-                    <p className="font-semibold">Arraste seu arquivo aqui</p>
-                    <p className="text-sm text-slate-400">
-                      ou clique para selecionar
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Selecionar Arquivo
-            </Button>
+          <div className="flex flex-col items-center gap-4">
+            {file ? (
+              <>
+                <FileUp className="h-12 w-12 text-green-500" />
+                <div>
+                  <p className="font-semibold">{file.name}</p>
+                  <p className="text-sm text-slate-400">
+                    {(file.size / 1024).toFixed(2)} KB
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Upload className="h-12 w-12 text-slate-400" />
+                <div>
+                  <p className="font-semibold">Arraste seu arquivo aqui</p>
+                  <p className="text-sm text-slate-400">
+                    ou clique para selecionar
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
-          {file && (
-            <div className="mt-6 flex gap-3">
-              <Button
-                onClick={handleUpload}
-                disabled={uploadMutation.isPending}
-                className="flex-1"
-              >
-                {uploadMutation.isPending ? (
-                  <>
-                    <Spinner className="mr-2 h-4 w-4" />
-                    Importando...
-                  </>
-                ) : (
-                  'Importar Arquivo'
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Selecionar Arquivo
+          </Button>
+        </div>
+
+        {file && (
+          <div className="mt-6 flex gap-3">
+            <Button
+              onClick={handleUpload}
+              disabled={uploadMutation.isPending}
+              className="flex-1"
+            >
+              {uploadMutation.isPending ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Importando...
+                </>
+              ) : (
+                'Importar Arquivo'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Import History */}
-      <Card className="chart-container">
-        <CardHeader>
-          <CardTitle>Histórico de Importações</CardTitle>
-          <CardDescription>
-            Últimas importações realizadas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {importHistory.length > 0 ? (
-            <div className="space-y-3">
-              {importHistory.map((imp) => (
-                <div key={imp.id} className="transaction-row">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      {imp.status === 'success' ? (
-                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                      )}
-                      <div>
-                        <p className="font-medium">{imp.fileName}</p>
-                        <p className="text-sm text-slate-400">
-                          {new Date(imp.importedAt).toLocaleString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{imp.totalRecords} registros</p>
-                      <p className={`text-sm ${imp.status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                        {imp.status === 'success' ? 'Sucesso' : 'Erro'}
+      <div className="chart-container">
+        <h3 className="chart-title">Histórico de Importações</h3>
+        <p className="text-slate-400 text-sm mb-6">Últimas importações realizadas</p>
+        
+        {importHistory.length > 0 ? (
+          <div className="space-y-3">
+            {importHistory.map((imp) => (
+              <div key={imp.id} className="transaction-row">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    {imp.status === 'success' ? (
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                    )}
+                    <div>
+                      <p className="font-medium">{imp.fileName}</p>
+                      <p className="text-sm text-slate-400">
+                        {new Date(imp.importedAt).toLocaleString('pt-BR')}
                       </p>
                     </div>
                   </div>
-                  {imp.errorMessage && (
-                    <Alert className="mt-2" variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{imp.errorMessage}</AlertDescription>
-                    </Alert>
-                  )}
+                  <div className="text-right">
+                    <p className="font-semibold">{imp.totalRecords} registros</p>
+                    <p className={`text-sm ${imp.status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                      {imp.status === 'success' ? 'Sucesso' : 'Erro'}
+                    </p>
+                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-400">
-              Nenhuma importação realizada ainda
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {imp.errorMessage && (
+                  <Alert className="mt-2" variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{imp.errorMessage}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-slate-400">
+            Nenhuma importação realizada ainda
+          </div>
+        )}
+      </div>
     </div>
   );
 }
