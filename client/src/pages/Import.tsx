@@ -57,7 +57,13 @@ export default function Import() {
 
     try {
       const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
+      // Convert ArrayBuffer to base64 using browser API
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64 = btoa(binary);
 
       const result = await uploadMutation.mutateAsync({
         fileBuffer: base64,
