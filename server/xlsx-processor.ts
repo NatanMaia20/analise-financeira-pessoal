@@ -21,6 +21,11 @@ function parseDate(dateStr: any): Date {
     throw new Error(`Invalid date string: ${dateStr}`);
   }
 
+  // Handle Date objects directly
+  if (dateStr instanceof Date) {
+    return dateStr;
+  }
+
   // Handle numeric dates (Excel serial numbers)
   if (typeof dateStr === 'number') {
     // Excel date serial number (days since 1900-01-01)
@@ -134,8 +139,8 @@ export async function processXLSXFile(buffer: Buffer): Promise<XLSXProcessResult
   let dateRange: { start: Date; end: Date } | null = null;
 
   try {
-    // Read workbook
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // Read workbook with cellDates option to preserve date objects
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
     console.log('[XLSX] Sheets found:', workbook.SheetNames);
 
     // Process Despesas (Expenses)
