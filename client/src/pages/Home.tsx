@@ -1,41 +1,55 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { getLoginUrl } from "@/const";
-import { BarChart3, TrendingUp, Zap } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import { BookOpen, LineChart, Sparkles, Moon, Sun, Wallet } from "lucide-react";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
   if (isAuthenticated) {
     return null; // Redirect to dashboard happens in App.tsx
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
-      <nav className="border-b border-slate-700 bg-slate-900/50 backdrop-blur">
+      <nav className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-8 h-8 text-green-500" />
-            <span className="text-xl font-bold text-white">Análise Financeira</span>
+            <BookOpen className="w-7 h-7 text-sidebar-primary" />
+            <span className="text-xl font-display font-semibold tracking-tight">Diário Financeiro</span>
           </div>
-          <Button asChild>
-            <a href={getLoginUrl()}>Entrar</a>
-          </Button>
+          <div className="flex items-center gap-2">
+            {toggleTheme && (
+              <button
+                onClick={toggleTheme}
+                className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-sidebar-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                aria-label={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            )}
+            <Button asChild className="btn-primary">
+              <a href={getLoginUrl()}>Entrar</a>
+            </Button>
+          </div>
         </div>
       </nav>
 
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-white mb-6">
-            Controle suas Finanças com Inteligência
+          <h1 className="mb-6">
+            Suas finanças, página por página
           </h1>
-          <p className="text-xl text-slate-300 mb-8">
-            Dashboard moderno para análise financeira pessoal com gráficos interativos, 
-            insights automáticos e assistente inteligente.
+          <p className="text-xl text-muted-foreground mb-8">
+            Importe seus lançamentos, separe o que é seu do que é repasse ou investimento,
+            e veja exatamente quanto sobra no fim do mês — sem letras miúdas.
           </p>
-          <Button size="lg" asChild className="bg-green-600 hover:bg-green-700">
+          <Button size="lg" asChild className="btn-primary">
             <a href={getLoginUrl()}>Começar Agora</a>
           </Button>
         </div>
@@ -44,26 +58,27 @@ export default function Home() {
       {/* Features */}
       <section className="container mx-auto px-4 py-20">
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
-            <TrendingUp className="w-12 h-12 text-green-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Análise em Tempo Real</h3>
-            <p className="text-slate-300">
-              Visualize suas receitas, despesas e saldo com gráficos interativos e atualizações instantâneas.
+          <div className="card-base p-8">
+            <LineChart className="w-10 h-10 text-income mb-4" />
+            <h3 className="mb-2">Visão Pessoal de Verdade</h3>
+            <p className="text-muted-foreground">
+              Transferências entre suas próprias contas, repasses a terceiros e investimentos ficam
+              separados do seu saldo pessoal — sem inflar nem esconder números.
             </p>
           </div>
 
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
-            <Zap className="w-12 h-12 text-yellow-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Insights Automáticos</h3>
-            <p className="text-slate-300">
-              Receba análises automáticas com IA identificando padrões de gasto e oportunidades de economia.
+          <div className="card-base p-8">
+            <Sparkles className="w-10 h-10 text-transfer mb-4" />
+            <h3 className="mb-2">Insights Automáticos</h3>
+            <p className="text-muted-foreground">
+              Receba análises com IA identificando padrões de gasto, anomalias e oportunidades de economia.
             </p>
           </div>
 
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
-            <BarChart3 className="w-12 h-12 text-blue-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Assistente Inteligente</h3>
-            <p className="text-slate-300">
+          <div className="card-base p-8">
+            <Wallet className="w-10 h-10 text-investment mb-4" />
+            <h3 className="mb-2">Assistente Inteligente</h3>
+            <p className="text-muted-foreground">
               Faça perguntas em linguagem natural sobre seus dados financeiros e obtenha respostas instantâneas.
             </p>
           </div>
@@ -72,18 +87,18 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20 text-center">
-        <h2 className="text-3xl font-bold text-white mb-6">
-          Pronto para organizar suas finanças?
+        <h2 className="mb-6">
+          Pronta para organizar suas finanças?
         </h2>
-        <Button size="lg" asChild className="bg-green-600 hover:bg-green-700">
+        <Button size="lg" asChild className="btn-primary">
           <a href={getLoginUrl()}>Acessar Dashboard</a>
         </Button>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700 bg-slate-900/50 py-8">
-        <div className="container mx-auto px-4 text-center text-slate-400">
-          <p>&copy; 2026 Sistema de Análise Financeira Pessoal. Todos os direitos reservados.</p>
+      <footer className="border-t border-sidebar-border bg-sidebar text-sidebar-foreground/70 py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p>&copy; 2026 Diário Financeiro. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

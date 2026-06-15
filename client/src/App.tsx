@@ -17,7 +17,7 @@ function Router() {
 
   if (loading) {
     return (
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="light" switchable>
         <DashboardLayoutSkeleton />
       </ThemeProvider>
     );
@@ -50,7 +50,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="light" switchable>
         <TooltipProvider>
           <Toaster />
           <Router />

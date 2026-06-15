@@ -87,8 +87,8 @@ export default function Assistant() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Assistente Financeiro</h1>
-        <p className="text-slate-400">
+        <h1 className="text-3xl mb-1">Assistente Financeiro</h1>
+        <p className="text-muted-foreground">
           Faça perguntas sobre seus dados financeiros e receba análises inteligentes
         </p>
       </div>
@@ -97,7 +97,7 @@ export default function Assistant() {
         {/* Chat Area */}
         <div className="lg:col-span-2">
           <Card className="chart-container h-[600px] flex flex-col">
-            <CardHeader className="border-b border-slate-700">
+            <CardHeader className="border-b border-border">
               <CardTitle className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5" />
                 Chat
@@ -117,8 +117,8 @@ export default function Assistant() {
                   <div
                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                       message.role === 'user'
-                        ? 'bg-green-500/20 text-green-100'
-                        : 'bg-slate-700 text-slate-100'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground'
                     }`}
                   >
                     {message.role === 'assistant' ? (
@@ -138,7 +138,7 @@ export default function Assistant() {
 
               {isLoading && (
                 <div className="flex gap-3 justify-start">
-                  <div className="bg-slate-700 px-4 py-2 rounded-lg flex items-center gap-2">
+                  <div className="bg-muted px-4 py-2 rounded-lg flex items-center gap-2">
                     <Spinner className="h-4 w-4" />
                     <span className="text-sm">Analisando...</span>
                   </div>
@@ -149,7 +149,7 @@ export default function Assistant() {
             </CardContent>
 
             {/* Input */}
-            <div className="border-t border-slate-700 p-4">
+            <div className="border-t border-border p-4">
               <div className="flex gap-2">
                 <Input
                   placeholder="Digite sua pergunta..."
@@ -203,7 +203,7 @@ export default function Assistant() {
             <CardHeader>
               <CardTitle className="text-base">Dicas</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-slate-400">
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>
                 ✓ Faça perguntas em linguagem natural
               </p>

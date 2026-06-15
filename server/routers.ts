@@ -21,6 +21,7 @@ import {
   getRecentInsights,
   getMonthlySummary,
   upsertMonthlySummary,
+  reclassifyInternalTransfers,
 } from "./db";
 import { processXLSXFile, detectDuplicates } from "./xlsx-processor";
 import {
@@ -30,6 +31,8 @@ import {
   calculateCategoryGrowth,
   detectSpendingAnomalies,
   projectFinances,
+  calculatePersonalMetrics,
+  analyzeByCategoryGroup,
 } from "./financial-analysis";
 import { invokeLLM } from "./_core/llm";
 
@@ -78,11 +81,19 @@ export const appRouter = router({
           });
           const importId = (importResult as any).insertId || 1;
 
-          // Insert categories
-          const categoryList = Array.from(result.categories).map(name => ({
-            name,
-            type: 'expense' as const,
-          }));
+          // Insert categories with their correct type (previously every
+          // category — including income ones like "Salário" — was
+          // inserted as type 'expense').
+          const categoryList = [
+            ...Array.from(result.expenseCategories).map(name => ({
+              name,
+              type: 'expense' as const,
+            })),
+            ...Array.from(result.incomeCategories).map(name => ({
+              name,
+              type: 'income' as const,
+            })),
+          ];
           await insertCategories(categoryList);
 
           // Insert transactions
@@ -117,6 +128,28 @@ export const appRouter = router({
 
     latest: protectedProcedure.query(async () => {
       return await getLatestImport();
+    }),
+
+    /**
+     * Fixes previously-imported data that was affected by the
+     * internal-transfer classification bug: transactions whose category
+     * is an internal transfer (e.g. "Transf. Entre Contas") but were
+     * stored as 'expense'/'income' get converted to type 'transfer', so
+     * they stop inflating totals and category breakdowns.
+     */
+    reclassifyTransactions: protectedProcedure.mutation(async () => {
+      try {
+        const result = await reclassifyInternalTransfers();
+        return {
+          success: true as const,
+          ...result,
+        };
+      } catch (error) {
+        return {
+          success: false as const,
+          error: error instanceof Error ? error.message : 'Failed to reclassify transactions',
+        };
+      }
     }),
   }),
 
@@ -211,6 +244,49 @@ export const appRouter = router({
         }
 
         return analyzeByCategory(transactions);
+      }),
+
+    /**
+     * "Personal view" metrics — excludes internal transfers, third-party
+     * pass-through amounts (money advanced for/reimbursed by others) and
+     * investment allocations from the income/expense totals.
+     */
+    personalMetrics: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        let transactions = await getAllTransactions();
+
+        if (input.startDate && input.endDate) {
+          const start = new Date(input.startDate);
+          const end = new Date(input.endDate);
+          transactions = await getTransactionsByDateRange(start, end);
+        }
+
+        return calculatePersonalMetrics(transactions);
+      }),
+
+    /**
+     * Breaks down expense/income totals by category group (personal,
+     * third-party pass-through, investment), excluding transfers.
+     */
+    categoryGroups: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        let transactions = await getAllTransactions();
+
+        if (input.startDate && input.endDate) {
+          const start = new Date(input.startDate);
+          const end = new Date(input.endDate);
+          transactions = await getTransactionsByDateRange(start, end);
+        }
+
+        return analyzeByCategoryGroup(transactions);
       }),
 
     monthlySummary: protectedProcedure.query(async () => {

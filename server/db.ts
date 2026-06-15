@@ -1,7 +1,8 @@
-import { eq, and, gte, lte, between, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, between, desc, asc, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, transactions, categories, imports, financialGoals, insights, monthlySummary } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { getCategoryFlow } from "../shared/category-rules";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -155,6 +156,62 @@ export async function getTransactionCount() {
   
   const result = await db.select({ count: transactions.id }).from(transactions);
   return result[0]?.count || 0;
+}
+
+/**
+ * Fixes data imported before the internal-transfer reclassification logic
+ * existed: finds 'expense'/'income' transactions whose category is an
+ * internal transfer (e.g. "Transf. Entre Contas", "Transf. entre Contas")
+ * and converts them to type 'transfer', so they stop inflating
+ * totalExpense/totalIncome and category breakdowns.
+ *
+ * This is idempotent — running it again after it has already fixed the
+ * data is a no-op, since the matched rows are no longer 'expense'/'income'.
+ */
+export async function reclassifyInternalTransfers(): Promise<{
+  expenseRowsUpdated: number;
+  incomeRowsUpdated: number;
+  categoriesAffected: string[];
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const distinctCategories = await db.selectDistinct({ category: transactions.category }).from(transactions);
+  const internalTransferCategories = distinctCategories
+    .map(row => row.category)
+    .filter(category => getCategoryFlow(category) === 'internal_transfer');
+
+  if (internalTransferCategories.length === 0) {
+    return { expenseRowsUpdated: 0, incomeRowsUpdated: 0, categoriesAffected: [] };
+  }
+
+  // Money leaving the tracked account: source = the account itself,
+  // target = a generic placeholder for "somewhere else".
+  const expenseResult: any = await db
+    .update(transactions)
+    .set({
+      type: 'transfer',
+      sourceAccount: sql`${transactions.account}`,
+      targetAccount: 'Outras contas',
+    })
+    .where(and(eq(transactions.type, 'expense'), inArray(transactions.category, internalTransferCategories)));
+
+  // Money entering the tracked account: source = generic placeholder,
+  // target = the account itself.
+  const incomeResult: any = await db
+    .update(transactions)
+    .set({
+      type: 'transfer',
+      sourceAccount: 'Outras contas',
+      targetAccount: sql`${transactions.account}`,
+    })
+    .where(and(eq(transactions.type, 'income'), inArray(transactions.category, internalTransferCategories)));
+
+  return {
+    expenseRowsUpdated: expenseResult?.[0]?.affectedRows ?? expenseResult?.affectedRows ?? 0,
+    incomeRowsUpdated: incomeResult?.[0]?.affectedRows ?? incomeResult?.affectedRows ?? 0,
+    categoriesAffected: internalTransferCategories,
+  };
 }
 
 // ============ CATEGORY QUERIES ============

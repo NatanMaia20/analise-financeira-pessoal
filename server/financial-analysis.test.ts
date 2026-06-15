@@ -5,6 +5,8 @@ import {
   calculateMonthlySummary,
   detectSpendingAnomalies,
   projectFinances,
+  calculatePersonalMetrics,
+  analyzeByCategoryGroup,
 } from './financial-analysis';
 import { Transaction } from '../drizzle/schema';
 
@@ -244,6 +246,120 @@ describe('Financial Analysis', () => {
       const projections = projectFinances([], 3);
 
       expect(projections.length).toBe(0);
+    });
+  });
+
+  describe('calculatePersonalMetrics', () => {
+    const txns: Transaction[] = [
+      {
+        id: 10, date: new Date('2026-01-05'), type: 'income', category: 'Salário',
+        account: 'Main', amount: '3000', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 11, date: new Date('2026-01-06'), type: 'expense', category: 'Café',
+        account: 'Main', amount: '100', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 12, date: new Date('2026-01-07'), type: 'expense', category: 'Desp. Temp. De Terceiros',
+        account: 'Main', amount: '20', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 13, date: new Date('2026-01-08'), type: 'income', category: 'Reembolso - Divisão de Conta',
+        account: 'Main', amount: '20', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 14, date: new Date('2026-01-09'), type: 'expense', category: 'Investimentos',
+        account: 'Main', amount: '150', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 15, date: new Date('2026-01-10'), type: 'transfer', category: 'Transf. Entre Contas',
+        account: 'Main', amount: '300', currency: 'BRL', tags: null, description: null,
+        sourceAccount: 'Main', targetAccount: 'Outras contas', isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+    ];
+
+    it('excludes internal transfers, third-party pass-through and investments from the personal totals', () => {
+      const metrics = calculatePersonalMetrics(txns);
+
+      expect(metrics.personalIncome).toBe(3000);
+      expect(metrics.personalExpense).toBe(100);
+      expect(metrics.personalNetBalance).toBe(2900);
+      expect(metrics.investmentAmount).toBe(150);
+      expect(metrics.thirdPartyExpense).toBe(20);
+      expect(metrics.thirdPartyReimbursement).toBe(20);
+      expect(metrics.thirdPartyNet).toBe(0);
+      expect(metrics.internalTransferTotal).toBe(300);
+    });
+
+    it('computes a personal savings rate based only on personal income/expense', () => {
+      const metrics = calculatePersonalMetrics(txns);
+      expect(metrics.personalSavingsRate).toBeCloseTo((2900 / 3000) * 100, 5);
+    });
+
+    it('handles empty transactions', () => {
+      const metrics = calculatePersonalMetrics([]);
+      expect(metrics.personalIncome).toBe(0);
+      expect(metrics.personalExpense).toBe(0);
+      expect(metrics.personalSavingsRate).toBe(0);
+    });
+  });
+
+  describe('analyzeByCategoryGroup', () => {
+    const txns: Transaction[] = [
+      {
+        id: 20, date: new Date('2026-01-05'), type: 'income', category: 'Salário',
+        account: 'Main', amount: '3000', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 21, date: new Date('2026-01-06'), type: 'expense', category: 'Café',
+        account: 'Main', amount: '100', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 22, date: new Date('2026-01-07'), type: 'expense', category: 'Desp. Temp. De Terceiros',
+        account: 'Main', amount: '20', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 23, date: new Date('2026-01-09'), type: 'expense', category: 'Investimentos',
+        account: 'Main', amount: '150', currency: 'BRL', tags: null, description: null,
+        sourceAccount: null, targetAccount: null, isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+      {
+        id: 24, date: new Date('2026-01-10'), type: 'transfer', category: 'Transf. Entre Contas',
+        account: 'Main', amount: '300', currency: 'BRL', tags: null, description: null,
+        sourceAccount: 'Main', targetAccount: 'Outras contas', isDuplicate: 0, importId: null,
+        createdAt: new Date(), updatedAt: new Date(),
+      },
+    ];
+
+    it('groups by personal / third_party / investment, excluding transfers', () => {
+      const groups = analyzeByCategoryGroup(txns);
+      const byFlow = new Map(groups.map(g => [g.flow, g]));
+
+      expect(byFlow.has('internal_transfer' as any)).toBe(false);
+
+      expect(byFlow.get('personal')?.totalIncome).toBe(3000);
+      expect(byFlow.get('personal')?.totalExpense).toBe(100);
+
+      expect(byFlow.get('third_party')?.totalExpense).toBe(20);
+      expect(byFlow.get('investment')?.totalExpense).toBe(150);
     });
   });
 });
