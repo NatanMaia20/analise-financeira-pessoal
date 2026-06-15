@@ -1,4 +1,5 @@
 import { Transaction } from '../drizzle/schema';
+import { getCategoryFlow, CategoryFlow, CATEGORY_FLOW_LABELS } from '../shared/category-rules';
 
 export interface FinancialMetrics {
   totalIncome: number;
@@ -299,4 +300,123 @@ export function projectFinances(
   }
 
   return projections;
+}
+
+/**
+ * "Personal view" metrics: filters out money movements that don't really
+ * represent personal consumption or personal income —
+ *  - internal transfers between the user's own accounts (type === 'transfer')
+ *  - money advanced for / reimbursed by third parties ("Desp. Temp. De
+ *    Terceiros" / "Reembolso - Divisão de Conta")
+ *  - amounts allocated to investments/savings
+ *
+ * `calculateMetrics` keeps representing the raw cash-flow totals (what
+ * actually moved in/out of the account); this represents "how much of
+ * that was really about me".
+ */
+export interface PersonalMetrics {
+  personalIncome: number;
+  personalExpense: number;
+  personalNetBalance: number;
+  personalSavingsRate: number;
+  investmentAmount: number;
+  thirdPartyExpense: number;
+  thirdPartyReimbursement: number;
+  thirdPartyNet: number;
+  internalTransferTotal: number;
+}
+
+export function calculatePersonalMetrics(transactions: Transaction[]): PersonalMetrics {
+  let personalIncome = 0;
+  let personalExpense = 0;
+  let investmentAmount = 0;
+  let thirdPartyExpense = 0;
+  let thirdPartyReimbursement = 0;
+  let internalTransferTotal = 0;
+
+  for (const txn of transactions) {
+    const amount = parseFloat(txn.amount as any);
+
+    if (txn.type === 'transfer') {
+      internalTransferTotal += amount;
+      continue;
+    }
+
+    const flow = getCategoryFlow(txn.category);
+
+    if (txn.type === 'income') {
+      if (flow === 'third_party') {
+        thirdPartyReimbursement += amount;
+      } else {
+        personalIncome += amount;
+      }
+    } else if (txn.type === 'expense') {
+      if (flow === 'third_party') {
+        thirdPartyExpense += amount;
+      } else if (flow === 'investment') {
+        investmentAmount += amount;
+      } else {
+        personalExpense += amount;
+      }
+    }
+  }
+
+  const personalNetBalance = personalIncome - personalExpense;
+
+  return {
+    personalIncome,
+    personalExpense,
+    personalNetBalance,
+    personalSavingsRate: personalIncome > 0 ? (personalNetBalance / personalIncome) * 100 : 0,
+    investmentAmount,
+    thirdPartyExpense,
+    thirdPartyReimbursement,
+    thirdPartyNet: thirdPartyReimbursement - thirdPartyExpense,
+    internalTransferTotal,
+  };
+}
+
+/**
+ * Groups expense/income transactions by their "category flow"
+ * (personal / third-party / investment), giving a high-level view of how
+ * much of the cash-flow totals correspond to real personal spending vs.
+ * pass-through money vs. savings allocations.
+ *
+ * Internal transfers (type === 'transfer') are intentionally excluded —
+ * they're shown in a dedicated "Movimentações internas" view instead.
+ */
+export interface CategoryGroupAnalysis {
+  flow: CategoryFlow;
+  label: string;
+  totalExpense: number;
+  totalIncome: number;
+  count: number;
+}
+
+export function analyzeByCategoryGroup(transactions: Transaction[]): CategoryGroupAnalysis[] {
+  const groups = new Map<CategoryFlow, { totalExpense: number; totalIncome: number; count: number }>();
+
+  for (const txn of transactions) {
+    if (txn.type === 'transfer') continue;
+
+    const flow = getCategoryFlow(txn.category);
+    const amount = parseFloat(txn.amount as any);
+    const existing = groups.get(flow) || { totalExpense: 0, totalIncome: 0, count: 0 };
+
+    if (txn.type === 'expense') existing.totalExpense += amount;
+    if (txn.type === 'income') existing.totalIncome += amount;
+    existing.count += 1;
+
+    groups.set(flow, existing);
+  }
+
+  const order: CategoryFlow[] = ['personal', 'third_party', 'investment'];
+
+  return order
+    .filter(flow => groups.has(flow))
+    .map(flow => ({
+      flow,
+      label: CATEGORY_FLOW_LABELS[flow],
+      ...groups.get(flow)!,
+    }));
 }
